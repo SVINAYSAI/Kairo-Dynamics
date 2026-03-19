@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kairo Dynamics — Sales Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#040812;--ink2:#080e1f;--ink3:#0e1628;
+  --t:#0DFFD4;--t2:#00C9A7;
+  --t3:rgba(13,255,212,.12);--t4:rgba(13,255,212,.06);--t5:rgba(13,255,212,.04);
+  --w:#eef2ff;--g:#6b7a99;--g2:#1e2a40;
+  --bdr:rgba(13,255,212,.14);--bdr2:rgba(255,255,255,.05);
+}
+*,::before,::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--w);font-family:'Outfit',sans-serif;overflow-x:hidden;cursor:none}
+
+/* CURSOR */
+#cur{position:fixed;width:10px;height:10px;background:var(--t);border-radius:50%;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:width .2s,height .2s;mix-blend-mode:difference}
+#cur2{position:fixed;width:34px;height:34px;border:1px solid rgba(13,255,212,.45);border-radius:50%;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:left .12s cubic-bezier(.22,1,.36,1),top .12s cubic-bezier(.22,1,.36,1),width .3s,height .3s}
+
+/* CANVAS */
+#cv{position:fixed;inset:0;z-index:0;opacity:.3;pointer-events:none}
+
+/* SCANLINES */
+body::after{content:'';position:fixed;inset:0;z-index:1;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);pointer-events:none}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:70px;background:rgba(4,8,18,.65);backdrop-filter:blur(28px) saturate(200%);border-bottom:1px solid var(--bdr2)}
+.nav-logo{display:flex;align-items:center;gap:11px;text-decoration:none;font-family:'Bebas Neue',sans-serif;font-size:1.55rem;letter-spacing:.08em;color:var(--w)}
+.nav-links{display:flex;gap:34px;list-style:none}
+.nav-links a{color:var(--g);font-size:.78rem;text-decoration:none;letter-spacing:.1em;text-transform:uppercase;transition:color .2s;position:relative}
+.nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;right:0;height:1px;background:var(--t);transform:scaleX(0);transform-origin:left;transition:transform .35s cubic-bezier(.22,1,.36,1)}
+.nav-links a:hover{color:var(--t)}.nav-links a:hover::after{transform:scaleX(1)}
+.nav-btn{background:transparent;border:1px solid var(--t);color:var(--t);padding:9px 24px;border-radius:7px;font-family:'Outfit',sans-serif;font-weight:600;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;cursor:none;position:relative;overflow:hidden;transition:color .3s}
+.nav-btn::before{content:'';position:absolute;inset:0;background:var(--t);transform:translateX(-101%);transition:transform .35s cubic-bezier(.22,1,.36,1)}
+.nav-btn:hover::before{transform:translateX(0)}.nav-btn:hover{color:var(--ink)}.nav-btn span{position:relative;z-index:1}
+
+/* HERO */
+#hero{position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;padding-top:70px;overflow:hidden}
+.hero-inner{width:100%;max-width:1300px;margin:0 auto;padding:90px 5% 80px;display:grid;grid-template-columns:1fr 400px;gap:60px;align-items:center}
+.h-pill{display:inline-flex;align-items:center;gap:10px;background:var(--t4);border:1px solid var(--bdr);border-radius:100px;padding:7px 18px 7px 10px;margin-bottom:34px}
+.h-pill-dot{width:8px;height:8px;border-radius:50%;background:var(--t);flex-shrink:0;box-shadow:0 0 8px var(--t);animation:dp 2s ease-in-out infinite}
+@keyframes dp{0%,100%{box-shadow:0 0 6px var(--t)}50%{box-shadow:0 0 18px var(--t);opacity:.6}}
+.h-pill-label{font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;color:var(--t);font-weight:600}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(4.5rem,9vw,8.5rem);line-height:.94;letter-spacing:.01em;margin-bottom:30px}
+.hero-title .line{display:block;overflow:hidden}
+.hero-title .word{display:inline-block;transform:translateY(110%);opacity:0;animation:wu .85s cubic-bezier(.22,1,.36,1) both}
+.hero-title .accent{color:transparent;-webkit-text-stroke:1.5px var(--t)}
+.hero-title .filled{color:var(--t)}
+@keyframes wu{to{transform:translateY(0);opacity:1}}
+.hero-desc{color:var(--g);font-size:1.02rem;line-height:1.82;max-width:540px;margin-bottom:42px;animation:fs .9s .6s ease both}
+@keyframes fs{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.hero-actions{display:flex;gap:16px;flex-wrap:wrap;animation:fs .9s .75s ease both}
+.cta-primary{position:relative;overflow:hidden;background:var(--t);color:var(--ink);padding:15px 36px;border-radius:8px;font-weight:700;font-size:.88rem;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:none;transition:transform .25s,box-shadow .25s;display:inline-block;box-shadow:0 0 40px rgba(13,255,212,.28)}
+.cta-primary:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 0 60px rgba(13,255,212,.5)}
+.cta-secondary{padding:15px 36px;border-radius:8px;border:1px solid var(--g2);color:var(--w);font-weight:500;font-size:.88rem;letter-spacing:.04em;text-decoration:none;cursor:none;transition:border-color .25s,color .25s,transform .25s;display:inline-block}
+.cta-secondary:hover{border-color:var(--t);color:var(--t);transform:translateY(-3px)}
+
+/* HERO CARDS */
+.hero-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;animation:fs .9s .5s ease both}
+.hcard{background:var(--ink2);border:1px solid var(--bdr2);border-radius:16px;padding:22px 18px;transition:border-color .3s,transform .4s;position:relative;overflow:hidden}
+.hcard::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--t),transparent);opacity:0;transition:opacity .4s}
+.hcard:hover{border-color:var(--bdr);transform:translateY(-6px)}.hcard:hover::before{opacity:1}
+.hcard:nth-child(1){animation:fci .6s .2s both}.hcard:nth-child(2){animation:fci .6s .33s both}.hcard:nth-child(3){animation:fci .6s .46s both}.hcard:nth-child(4){animation:fci .6s .59s both}
+@keyframes fci{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+.hcard-icon{font-size:1.5rem;margin-bottom:14px;width:44px;height:44px;background:var(--t4);border:1px solid var(--bdr);border-radius:12px;display:flex;align-items:center;justify-content:center}
+.hcard h4{font-size:.87rem;font-weight:600;margin-bottom:6px;line-height:1.3}.hcard p{font-size:.74rem;color:var(--g);line-height:1.55}
+
+/* MARQUEE */
+.marquee-wrap{position:relative;z-index:2;border-top:1px solid var(--bdr2);border-bottom:1px solid var(--bdr2);overflow:hidden;padding:16px 0;background:var(--t5)}
+.marquee-track{display:flex;gap:60px;animation:ms 22s linear infinite;width:max-content}
+.marquee-track:hover{animation-play-state:paused}
+@keyframes ms{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.mi{display:flex;align-items:center;gap:12px;white-space:nowrap;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g);font-weight:500}
+.mi span{color:var(--t);font-weight:700;font-size:.95rem}
+.mdot{width:4px;height:4px;border-radius:50%;background:var(--g2)}
+
+/* COMMON */
+section{position:relative;z-index:2}
+.container{max-width:1220px;margin:0 auto;padding:0 5%}
+.sec-label{display:inline-flex;align-items:center;gap:10px;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--t);font-weight:600;margin-bottom:18px}
+.sec-label::before{content:'';width:26px;height:1px;background:var(--t);display:block}
+.reveal{opacity:0;transform:translateY(44px);transition:opacity .9s cubic-bezier(.22,1,.36,1),transform .9s cubic-bezier(.22,1,.36,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* WHAT IT IS */
+#what-it-is{padding:140px 0}
+.what-layout{display:grid;grid-template-columns:1fr 1fr;gap:100px;align-items:center}
+.what-left h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,5vw,5rem);line-height:1;letter-spacing:.02em;margin-bottom:26px}
+.what-left h2 em{font-style:normal;color:var(--t)}
+.what-left p{color:var(--g);line-height:1.88;font-size:.965rem;margin-bottom:18px}
+.big-quote{border-left:2px solid var(--t);padding-left:24px;margin:32px 0;font-size:1.08rem;color:var(--w);font-weight:300;line-height:1.7;font-style:italic}
+
+/* PRICING */
+.pricing-wrap{position:relative}
+.pricing-glow{position:absolute;inset:-50px;background:radial-gradient(ellipse at 50% 50%,rgba(13,255,212,.11) 0%,transparent 70%);pointer-events:none;animation:pg 4s ease-in-out infinite}
+@keyframes pg{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.06);opacity:1}}
+.pricing-card{background:var(--ink2);border-radius:24px;padding:44px 40px;position:relative;overflow:hidden;isolation:isolate}
+.pricing-card::before{content:'';position:absolute;inset:-2px;border-radius:26px;z-index:-1;background:conic-gradient(from var(--ang,0deg),transparent 0%,var(--t) 15%,transparent 30%);animation:rb 4s linear infinite}
+@property --ang{syntax:'<angle>';initial-value:0deg;inherits:false}
+@keyframes rb{to{--ang:360deg}}
+.pricing-card::after{content:'';position:absolute;inset:2px;background:var(--ink2);border-radius:22px;z-index:-1}
+.p-tag{display:inline-block;background:var(--t);color:var(--ink);font-size:.63rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:5px 14px;border-radius:4px;margin-bottom:22px}
+.p-name{font-size:.95rem;color:var(--g);font-weight:400;margin-bottom:10px}
+.p-price{font-family:'Bebas Neue',sans-serif;font-size:5.5rem;line-height:1;color:var(--t);letter-spacing:-.02em;display:flex;align-items:flex-start;gap:4px;margin-bottom:4px}
+.p-price sup{font-size:2rem;margin-top:14px}.p-price sub{font-size:1.2rem;align-self:flex-end;color:var(--g);margin-bottom:10px}
+.p-desc{font-size:.82rem;color:var(--g);line-height:1.72;margin-bottom:26px}
+.p-features{list-style:none;margin-bottom:30px;display:flex;flex-direction:column;gap:0}
+.p-features li{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--bdr2);font-size:.86rem;color:var(--g);transition:color .2s}
+.p-features li:last-child{border:none}.p-features li:hover{color:var(--w)}
+.p-features li::before{content:'';width:16px;height:16px;border-radius:50%;flex-shrink:0;background:var(--t3);border:1px solid var(--t);background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 6l3 3 5-5' stroke='%230DFFD4' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-size:10px;background-position:center;background-repeat:no-repeat}
+.p-cta{display:block;text-align:center;background:var(--t);color:var(--ink);padding:16px;border-radius:10px;font-weight:700;font-size:.87rem;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;cursor:none;transition:opacity .2s,transform .2s,box-shadow .2s;box-shadow:0 8px 30px rgba(13,255,212,.25)}
+.p-cta:hover{opacity:.9;transform:translateY(-2px);box-shadow:0 14px 42px rgba(13,255,212,.42)}
+.p-note{text-align:center;font-size:.7rem;color:var(--g);margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px}
+
+/* USE CASES */
+#how-teams-use-it{padding:140px 0;background:linear-gradient(180deg,transparent,var(--ink2) 18%,var(--ink2) 82%,transparent)}
+.use-header{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:end;margin-bottom:72px}
+.use-header h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,5vw,5rem);line-height:1;letter-spacing:.02em}
+.use-header p{color:var(--g);font-size:.965rem;line-height:1.82;padding-bottom:6px}
+.use-list{display:flex;flex-direction:column;gap:0}
+.use-item{border-top:1px solid var(--bdr2);padding:26px 16px;display:grid;grid-template-columns:56px 1fr auto;gap:24px;align-items:center;cursor:none;transition:background .25s;border-radius:10px}
+.use-item:last-child{border-bottom:1px solid var(--bdr2)}
+.use-item:hover{background:var(--t5)}
+.use-num{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--g2);line-height:1;transition:color .3s}
+.use-item:hover .use-num{color:var(--t)}
+.use-content h3{font-size:1.1rem;font-weight:600;margin-bottom:6px}
+.use-content p{font-size:.84rem;color:var(--g);line-height:1.65;max-width:580px}
+.use-arrow{width:40px;height:40px;border-radius:50%;border:1px solid var(--g2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .3s}
+.use-item:hover .use-arrow{background:var(--t);border-color:var(--t)}
+.use-arrow svg{width:16px;height:16px;stroke:var(--g);fill:none;transition:stroke .3s}
+.use-item:hover .use-arrow svg{stroke:var(--ink)}
+
+/* HOW IT WORKS */
+#how-it-works{padding:140px 0}
+.works-head{text-align:center;margin-bottom:90px}
+.works-head h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(3.5rem,7vw,6.5rem);line-height:.93;letter-spacing:.01em;margin-bottom:18px}
+.works-head p{color:var(--g);max-width:460px;margin:0 auto;line-height:1.82}
+.works-steps{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--bdr2);border-radius:20px;overflow:hidden}
+.works-step{background:var(--ink2);padding:44px 30px;position:relative;overflow:hidden;transition:background .35s;border-right:1px solid var(--bdr2)}
+.works-step:last-child{border-right:none}
+.works-step::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--t),var(--t2));transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.22,1,.36,1)}
+.works-step:hover{background:var(--ink3)}.works-step:hover::before{transform:scaleX(1)}
+.step-n{font-family:'Bebas Neue',sans-serif;font-size:4.8rem;line-height:1;color:var(--g2);margin-bottom:26px;transition:color .3s}
+.works-step:hover .step-n{color:var(--t)}
+.works-step h3{font-size:1rem;font-weight:600;margin-bottom:12px}.works-step p{font-size:.81rem;color:var(--g);line-height:1.72}
+.step-ico{position:absolute;top:30px;right:26px;font-size:1.5rem;opacity:.12;transition:opacity .3s,transform .3s}
+.works-step:hover .step-ico{opacity:.35;transform:scale(1.1)}
+
+/* PERSONAS */
+#who-its-for{padding:140px 0;background:linear-gradient(180deg,transparent,var(--ink2) 18%,var(--ink2) 82%,transparent)}
+.personas-head{max-width:680px;margin-bottom:72px}
+.personas-head h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,5vw,5rem);line-height:1;letter-spacing:.02em;margin-bottom:18px}
+.personas-head p{color:var(--g);font-size:.965rem;line-height:1.82}
+.personas-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.pc{background:var(--ink2);border:1px solid var(--bdr2);border-radius:22px;padding:40px 30px;position:relative;overflow:hidden;transition:transform .45s cubic-bezier(.22,1,.36,1),border-color .3s,box-shadow .45s;cursor:none}
+.pc:hover{transform:translateY(-12px);border-color:var(--bdr);box-shadow:0 32px 64px rgba(0,0,0,.45),0 0 44px var(--t3)}
+.pc-glow{position:absolute;bottom:-50px;right:-50px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,var(--t3),transparent 70%);transition:transform .45s}
+.pc:hover .pc-glow{transform:scale(1.6)}
+.pc-num{font-family:'Bebas Neue',sans-serif;font-size:4rem;color:var(--g2);line-height:1;margin-bottom:18px;transition:color .3s}
+.pc:hover .pc-num{color:var(--t)}
+.pc-icon{font-size:1.5rem;width:50px;height:50px;border-radius:14px;background:var(--t4);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.pc h3{font-size:1.15rem;font-weight:700;margin-bottom:10px}.pc p{font-size:.83rem;color:var(--g);line-height:1.72}
+.pc-tag{display:inline-block;margin-top:18px;font-size:.67rem;letter-spacing:.1em;text-transform:uppercase;color:var(--t);font-weight:600;border-bottom:1px solid var(--bdr);padding-bottom:3px}
+
+/* CONTACT */
+#contact{padding:140px 0}
+.contact-wrap{background:var(--ink2);border:1px solid var(--bdr2);border-radius:28px;overflow:hidden;display:grid;grid-template-columns:1.1fr 1fr}
+.contact-left{padding:72px 60px;background:linear-gradient(135deg,var(--ink3),var(--ink2));position:relative;overflow:hidden}
+.contact-left::before{content:'';position:absolute;top:-90px;left:-90px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,var(--t3),transparent 70%)}
+.contact-left h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,4vw,4rem);line-height:1.05;letter-spacing:.02em;margin-bottom:18px;position:relative}
+.contact-left h2 em{font-style:normal;color:var(--t)}
+.contact-left p{color:var(--g);font-size:.94rem;line-height:1.88;margin-bottom:34px;position:relative}
+.contact-email{display:flex;align-items:center;gap:12px;background:var(--t);color:var(--ink);padding:16px 28px;border-radius:10px;font-weight:700;font-size:.87rem;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:none;margin-bottom:16px;max-width:320px;transition:transform .25s,box-shadow .25s;box-shadow:0 8px 30px rgba(13,255,212,.24);position:relative}
+.contact-email:hover{transform:translateY(-3px);box-shadow:0 14px 44px rgba(13,255,212,.4)}
+.contact-link{font-size:.82rem;color:var(--t);text-decoration:none;display:flex;align-items:center;gap:6px;transition:gap .2s;position:relative}
+.contact-link:hover{gap:10px}
+.contact-right{padding:72px 50px;border-left:1px solid var(--bdr2)}
+.contact-right h3{font-size:.72rem;color:var(--g);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:30px}
+.demo-item{display:flex;gap:16px;margin-bottom:26px;align-items:flex-start}
+.demo-item:last-child{margin-bottom:0}
+.demo-arrow{width:28px;height:28px;border-radius:50%;background:var(--t4);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;color:var(--t);font-size:.75rem}
+.demo-item p{font-size:.875rem;color:var(--g);line-height:1.75}
+
+/* FOOTER */
+footer{position:relative;z-index:2;border-top:1px solid var(--bdr2);padding:52px 5%}
+.footer-grid{max-width:1220px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;margin-bottom:34px}
+.footer-logo{display:flex;align-items:center;gap:11px;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.08em;color:var(--w)}
+.footer-links{display:flex;gap:28px;flex-wrap:wrap}
+.footer-links a{font-size:.74rem;color:var(--g);text-decoration:none;letter-spacing:.08em;text-transform:uppercase;transition:color .2s}
+.footer-links a:hover{color:var(--t)}
+.footer-bottom{max-width:1220px;margin:0 auto;border-top:1px solid var(--bdr2);padding-top:26px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.footer-copy,.footer-made{font-size:.74rem;color:var(--g)}
+.footer-made span{color:var(--t)}
+
+/* CHATBOT */
+#chatbot{position:fixed;bottom:26px;right:26px;z-index:9000}
+.cb-btn{width:60px;height:60px;border-radius:50%;background:var(--ink);border:1.5px solid var(--t);cursor:none;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 0 rgba(13,255,212,.4);animation:cbring 3.5s ease-in-out infinite;transition:transform .2s,background .25s;position:relative;z-index:2}
+.cb-btn:hover{transform:scale(1.1);background:var(--t3)}
+@keyframes cbring{0%{box-shadow:0 0 0 0 rgba(13,255,212,.4)}70%{box-shadow:0 0 0 18px rgba(13,255,212,0)}100%{box-shadow:0 0 0 0 rgba(13,255,212,0)}}
+.cb-btn svg{width:26px;height:26px;fill:var(--t)}
+.cb-btn .ico-close{display:none}.cb-btn.open .ico-chat{display:none}.cb-btn.open .ico-close{display:block}
+
+.chat-win{position:absolute;bottom:76px;right:0;width:380px;max-height:540px;background:var(--ink2);border:1px solid var(--bdr);border-radius:22px;display:none;flex-direction:column;overflow:hidden;box-shadow:0 32px 84px rgba(0,0,0,.72),0 0 56px var(--t3)}
+.chat-win.open{display:flex}
+
+.chat-head{padding:18px 20px;background:linear-gradient(135deg,var(--ink3),#0c1628);border-bottom:1px solid var(--bdr2);display:flex;align-items:center;gap:12px}
+.chat-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--t),var(--t2));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--ink);flex-shrink:0;box-shadow:0 0 16px rgba(13,255,212,.3)}
+.chat-head-info h4{font-size:.94rem;font-weight:600;margin-bottom:2px}
+.chat-status{font-size:.68rem;color:var(--g);display:flex;align-items:center;gap:5px}
+.chat-status i{width:7px;height:7px;border-radius:50%;background:#1ef598;display:inline-block;box-shadow:0 0 6px #1ef598;animation:sb 2s ease-in-out infinite}
+@keyframes sb{0%,100%{opacity:1}50%{opacity:.5}}
+
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
+.chat-msgs::-webkit-scrollbar{width:3px}.chat-msgs::-webkit-scrollbar-thumb{background:var(--g2);border-radius:4px}
+
+.msg{display:flex;flex-direction:column;max-width:88%;animation:mi .25s ease both}
+@keyframes mi{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.msg.bot{align-self:flex-start}.msg.user{align-self:flex-end}
+.msg-b{padding:11px 15px;border-radius:16px;font-size:.83rem;line-height:1.68}
+.msg.bot .msg-b{background:var(--ink3);color:var(--w);border:1px solid var(--bdr2);border-bottom-left-radius:4px}
+.msg.user .msg-b{background:var(--t);color:var(--ink);font-weight:500;border-bottom-right-radius:4px}
+.qr-wrap{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.qr{background:transparent;border:1px solid var(--bdr);color:var(--t);font-size:.71rem;padding:5px 13px;border-radius:20px;cursor:none;font-family:'Outfit',sans-serif;transition:background .2s,border-color .2s}
+.qr:hover{background:var(--t3);border-color:var(--t)}
+
+.chat-input-row{padding:14px;border-top:1px solid var(--bdr2);display:flex;gap:10px}
+.chat-input{flex:1;background:var(--ink3);border:1px solid var(--bdr2);border-radius:10px;color:var(--w);font-family:'Outfit',sans-serif;font-size:.84rem;padding:10px 14px;outline:none;resize:none;transition:border-color .2s;line-height:1.5}
+.chat-input:focus{border-color:var(--bdr)}.chat-input::placeholder{color:var(--g)}
+.chat-send{width:40px;height:40px;border-radius:10px;background:var(--t);border:none;cursor:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;align-self:flex-end;transition:opacity .2s,transform .2s}
+.chat-send:hover{opacity:.85;transform:scale(1.06)}.chat-send svg{width:17px;height:17px;fill:var(--ink)}
+.tdots{display:flex;gap:4px;padding:6px 0}.tdots span{width:6px;height:6px;border-radius:50%;background:var(--g);animation:td 1.4s ease-in-out infinite}
+.tdots span:nth-child(2){animation-delay:.2s}.tdots span:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+  .hero-inner{grid-template-columns:1fr;gap:50px}.hero-cards{max-width:480px}
+  .what-layout{grid-template-columns:1fr;gap:60px}
+  .works-steps{grid-template-columns:1fr 1fr}
+  .works-step{border-right:none;border-bottom:1px solid var(--bdr2)}
+  .contact-wrap{grid-template-columns:1fr}.contact-right{border-left:none;border-top:1px solid var(--bdr2)}
+  .use-header{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .nav-links{display:none}
+  .personas-grid{grid-template-columns:1fr}
+  .works-steps{grid-template-columns:1fr}
+  .contact-left,.contact-right{padding:48px 30px}
+  .chat-win{width:calc(100vw - 44px);right:-12px}
+  .use-item{grid-template-columns:44px 1fr auto}
+}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="cur2"></div>
+<canvas id="cv"></canvas>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">
+    <svg viewBox="0 0 34 34" fill="none" width="32" height="32">
+      <rect x="1" y="1" width="32" height="32" rx="8" stroke="#0DFFD4" stroke-width="1.2"/>
+      <path d="M10 24L17 10L24 24" stroke="#0DFFD4" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M12.5 19.5H21.5" stroke="#0DFFD4" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="17" cy="10" r="1.5" fill="#0DFFD4"/>
+    </svg>
+    KAIRO
+  </a>
+  <ul class="nav-links">
+    <li><a href="#what-it-is">What it is</a></li>
+    <li><a href="#how-teams-use-it">Use cases</a></li>
+    <li><a href="#how-it-works">How it works</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a class="nav-btn" href="#contact"><span>Request Access</span></a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="h-pill"><div class="h-pill-dot"></div><span class="h-pill-label">Subscription SaaS · B2B Intelligence</span></div>
+      <h1 class="hero-title">
+        <span class="line"><span class="word" style="animation-delay:.1s">Sales</span><span class="word accent" style="animation-delay:.19s">&nbsp;intel</span></span>
+        <span class="line"><span class="word" style="animation-delay:.28s">built</span><span class="word" style="animation-delay:.37s">&nbsp;from</span></span>
+        <span class="line"><span class="word filled" style="animation-delay:.46s">real</span><span class="word" style="animation-delay:.55s">&nbsp;signals</span></span>
+      </h1>
+      <p class="hero-desc">Kairo Dynamics analyzes publicly available data — job postings, company activity — to help B2B teams identify high-probability prospects and prioritize every outreach with conviction.</p>
+      <div class="hero-actions">
+        <a class="cta-primary" href="#contact">Request Access</a>
+        <a class="cta-secondary" href="#contact">Book a Demo &rarr;</a>
+      </div>
+    </div>
+    <div class="hero-cards">
+      <div class="hcard"><div class="hcard-icon">🏢</div><h4>Company Insights</h4><p>Built from public signals and real job postings.</p></div>
+      <div class="hcard"><div class="hcard-icon">🎯</div><h4>Targeting Signals</h4><p>Know who to contact and exactly when.</p></div>
+      <div class="hcard"><div class="hcard-icon">🌐</div><h4>Web Platform</h4><p>On-demand access, subscription-based.</p></div>
+      <div class="hcard"><div class="hcard-icon">⚡</div><h4>AI-Generated</h4><p>Intelligent insights, never static lists.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <div class="mi"><span>Pro Access</span> $20 / month</div><div class="mdot"></div>
+    <div class="mi"><span>Unlimited</span> State Space Search</div><div class="mdot"></div>
+    <div class="mi"><span>AI</span> Sales Script Engine</div><div class="mdot"></div>
+    <div class="mi"><span>Real</span> Company Signals</div><div class="mdot"></div>
+    <div class="mi"><span>Pain Point</span> Traceability</div><div class="mdot"></div>
+    <div class="mi"><span>Stripe</span> Secure Payments</div><div class="mdot"></div>
+    <div class="mi"><span>Pro Access</span> $20 / month</div><div class="mdot"></div>
+    <div class="mi"><span>Unlimited</span> State Space Search</div><div class="mdot"></div>
+    <div class="mi"><span>AI</span> Sales Script Engine</div><div class="mdot"></div>
+    <div class="mi"><span>Real</span> Company Signals</div><div class="mdot"></div>
+    <div class="mi"><span>Pain Point</span> Traceability</div><div class="mdot"></div>
+    <div class="mi"><span>Stripe</span> Secure Payments</div><div class="mdot"></div>
+  </div>
+</div>
+
+<!-- WHAT IT IS -->
+<section id="what-it-is">
+  <div class="container">
+    <div class="what-layout">
+      <div class="what-left reveal">
+        <div class="sec-label">Core Proposition</div>
+        <h2>What Kairo<br><em>Dynamics</em> is</h2>
+        <p>A web-based sales intelligence platform sold as subscription software. It helps B2B sales teams identify companies showing meaningful signals, understand likely business needs, and focus outreach on accounts most likely to convert — right now.</p>
+        <blockquote class="big-quote">"We provide software-generated insights — not raw data or static contact lists."</blockquote>
+        <p>Insights are derived from publicly available business signals, including job postings and related company activity. Built for modern B2B growth teams that need a real competitive edge in their outbound motion.</p>
+      </div>
+      <div class="pricing-wrap reveal" style="transition-delay:.15s">
+        <div class="pricing-glow"></div>
+        <div class="pricing-card">
+          <div class="p-tag">Pro Access</div>
+          <div class="p-name">Full Platform Access</div>
+          <div class="p-price"><sup>$</sup>20<sub>/mo</sub></div>
+          <p class="p-desc">Complete access to the Company State Space Intelligence engine — pain point vectors, similarity matching, and AI sales scripts included.</p>
+          <ul class="p-features">
+            <li>Unlimited State Space Search</li>
+            <li>Full Pain Point Traceability</li>
+            <li>AI Sales Script Engine</li>
+            <li>Custom Similarity Weights</li>
+          </ul>
+          <a class="p-cta" href="https://kairodynamics.io/create-account/">Get Started Today</a>
+          <p class="p-note">🔒 Secure payment via Stripe</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW TEAMS USE IT -->
+<section id="how-teams-use-it">
+  <div class="container">
+    <div class="use-header reveal">
+      <div>
+        <div class="sec-label">Utility</div>
+        <h2>How teams<br>use Kairo</h2>
+      </div>
+      <p>A flexible intelligence layer that plugs into how modern revenue teams already operate — from initial discovery to final outreach prioritization.</p>
+    </div>
+    <div class="use-list reveal" style="transition-delay:.1s">
+      <div class="use-item">
+        <div class="use-num">01</div>
+        <div class="use-content"><h3>Hiring Signal Search</h3><p>Search for companies showing active hiring signals and catch buying intent before your competitors even know to look.</p></div>
+        <div class="use-arrow"><svg viewBox="0 0 16 16" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+      </div>
+      <div class="use-item">
+        <div class="use-num">02</div>
+        <div class="use-content"><h3>Business Needs Identification</h3><p>Identify likely needs based on public company activity — so your first call starts with context, not cold guesswork.</p></div>
+        <div class="use-arrow"><svg viewBox="0 0 16 16" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+      </div>
+      <div class="use-item">
+        <div class="use-num">03</div>
+        <div class="use-content"><h3>Lookalike Account Discovery</h3><p>Discover companies with overlapping signals to your best customers and expand your addressable market intelligently.</p></div>
+        <div class="use-arrow"><svg viewBox="0 0 16 16" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+      </div>
+      <div class="use-item">
+        <div class="use-num">04</div>
+        <div class="use-content"><h3>Outreach Timing & Prioritization</h3><p>Prioritize outbound accounts and time your outreach based on live signals — not intuition or a spreadsheet from last quarter.</p></div>
+        <div class="use-arrow"><svg viewBox="0 0 16 16" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+      </div>
+      <div class="use-item">
+        <div class="use-num">05</div>
+        <div class="use-content"><h3>Targeted Prospect List Building</h3><p>Build prospect lists grounded in actual company behaviors rather than demographic filters and firmographic guesswork.</p></div>
+        <div class="use-arrow"><svg viewBox="0 0 16 16" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+  <div class="container">
+    <div class="works-head reveal">
+      <div class="sec-label" style="justify-content:center">Process</div>
+      <h2>How it<br><span style="color:var(--t)">works</span></h2>
+      <p>Public company signals are transformed into actionable intelligence in four precise steps — all delivered through the platform.</p>
+    </div>
+    <div class="works-steps reveal" style="transition-delay:.1s">
+      <div class="works-step">
+        <div class="step-ico">📊</div>
+        <div class="step-n">01</div>
+        <h3>Data Analysis</h3>
+        <p>We ingest and process publicly available company signals — job postings, hiring patterns, and related business activity.</p>
+      </div>
+      <div class="works-step">
+        <div class="step-ico">🧩</div>
+        <div class="step-n">02</div>
+        <h3>Synthesis</h3>
+        <p>Raw signals are organized into structured, company-level insights — filtering noise and surfacing what actually matters.</p>
+      </div>
+      <div class="works-step">
+        <div class="step-ico">🧠</div>
+        <div class="step-n">03</div>
+        <h3>Intelligence</h3>
+        <p>We map likely business needs and identify the highest-probability target accounts for your outbound motion.</p>
+      </div>
+      <div class="works-step">
+        <div class="step-ico">🌐</div>
+        <div class="step-n">04</div>
+        <h3>Access</h3>
+        <p>Subscribers access all insights on-demand through the Kairo Dynamics web platform — whenever you need them.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHO IT'S FOR -->
+<section id="who-its-for">
+  <div class="container">
+    <div class="personas-head reveal">
+      <div class="sec-label">Personas</div>
+      <h2>Who it's<br>built for</h2>
+      <p>Kairo Dynamics is engineered for teams that need a sharper way to identify target accounts, understand buying context, and prioritize outbound work — all inside a web-based platform.</p>
+    </div>
+    <div class="personas-grid">
+      <div class="pc reveal" style="transition-delay:.05s">
+        <div class="pc-glow"></div>
+        <div class="pc-num">01</div>
+        <div class="pc-icon">💼</div>
+        <h3>B2B Sales Teams</h3>
+        <p>Sales reps and AEs who need sharper account targeting, better timing signals, and AI-generated scripts to close more deals with less wasted effort.</p>
+        <span class="pc-tag">Primary persona →</span>
+      </div>
+      <div class="pc reveal" style="transition-delay:.15s">
+        <div class="pc-glow"></div>
+        <div class="pc-num">02</div>
+        <div class="pc-icon">🚀</div>
+        <h3>Growth Teams</h3>
+        <p>Growth operators running outbound programs at scale who need signal-based intelligence to systematically improve prospecting efficiency and output quality.</p>
+        <span class="pc-tag">High fit →</span>
+      </div>
+      <div class="pc reveal" style="transition-delay:.25s">
+        <div class="pc-glow"></div>
+        <div class="pc-num">03</div>
+        <div class="pc-icon">⚙️</div>
+        <h3>RevOps Teams</h3>
+        <p>Revenue operations professionals managing tooling, data quality, and workflow infrastructure who need a reliable intelligence source inside their stack.</p>
+        <span class="pc-tag">Strategic fit →</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="container">
+    <div class="contact-wrap reveal">
+      <div class="contact-left">
+        <div class="sec-label">Onboarding</div>
+        <h2>Ready to see<br><em>Kairo</em> in action?</h2>
+        <p>Use the options below to request subscription access or book a live demo. Both are handled directly by the Kairo Dynamics team at KairoAI Systems LLC.</p>
+        <a class="contact-email" href="mailto:hello@kairoai.systems?subject=Request%20Access%20to%20Kairo%20Dynamics">✉ hello@kairoai.systems</a>
+        <a class="contact-link" href="https://kairodynamics.io/contact/" target="_blank">Open full contact page →</a>
+      </div>
+      <div class="contact-right">
+        <h3>What the demo covers</h3>
+        <div class="demo-item"><div class="demo-arrow">→</div><p>Full web-based workflow walkthrough and how the subscription platform is structured for your team.</p></div>
+        <div class="demo-item"><div class="demo-arrow">→</div><p>Live demonstration of how job postings and public signals become structured, actionable company insights.</p></div>
+        <div class="demo-item"><div class="demo-arrow">→</div><p>The State Space Intelligence engine and AI Sales Script tools in a real prospecting scenario.</p></div>
+        <div class="demo-item"><div class="demo-arrow">→</div><p>How subscription access is set up, managed, and onboarded for B2B sales and RevOps teams.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-logo">
+      <svg viewBox="0 0 34 34" fill="none" width="28" height="28"><rect x="1" y="1" width="32" height="32" rx="8" stroke="#0DFFD4" stroke-width="1.2"/><path d="M10 24L17 10L24 24" stroke="#0DFFD4" stroke-width="1.6" stroke-linecap="round"/><path d="M12.5 19.5H21.5" stroke="#0DFFD4" stroke-width="1.6" stroke-linecap="round"/><circle cx="17" cy="10" r="1.5" fill="#0DFFD4"/></svg>
+      KAIRO DYNAMICS
+    </div>
+    <div class="footer-links">
+      <a href="https://kairodynamics.io/privacy/">Privacy</a>
+      <a href="https://kairodynamics.io/terms/">Terms</a>
+      <a href="https://kairodynamics.io/contact/">Contact</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p class="footer-copy">© 2026 KairoAI Systems LLC. All rights reserved.</p>
+    <p class="footer-made">Contact <span>hello@kairoai.systems</span></p>
+  </div>
+</footer>
+
+<!-- CHATBOT -->
+<div id="chatbot">
+  <div class="chat-win" id="chatWin">
+    <div class="chat-head">
+      <div class="chat-av">K</div>
+      <div class="chat-head-info">
+        <h4>Kairo Assistant</h4>
+        <div class="chat-status"><i></i> Online · Ask anything</div>
+      </div>
+    </div>
+    <div class="chat-msgs" id="chatMsgs">
+      <div class="msg bot">
+        <div class="msg-b">👋 Hey! I'm Kairo's assistant. Ask me about pricing, how the platform works, who it's built for, or how to get started.</div>
+        <div class="qr-wrap">
+          <button class="qr" onclick="sq('What is Kairo Dynamics?')">What is it?</button>
+          <button class="qr" onclick="sq('How much does it cost?')">Pricing</button>
+          <button class="qr" onclick="sq('How does it work?')">How it works</button>
+          <button class="qr" onclick="sq('How do I get started?')">Get started</button>
+        </div>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="ci" placeholder="Ask about Kairo…" rows="1" onkeydown="ck(event)"></textarea>
+      <button class="chat-send" onclick="send()"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button>
+    </div>
+  </div>
+  <button class="cb-btn" id="cBtn" onclick="toggleChat()">
+    <svg class="ico-chat" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+    <svg class="ico-close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+  </button>
+</div>
+
+<script>
+/* CURSOR */
+const cur=document.getElementById('cur'),cur2=document.getElementById('cur2');
+let mx=0,my=0,cx=0,cy=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  cur.style.left=mx+'px';cur.style.top=my+'px';
+});
+(function anim(){
+  cx+=(mx-cx)*.13;cy+=(my-cy)*.13;
+  cur2.style.left=cx+'px';cur2.style.top=cy+'px';
+  requestAnimationFrame(anim);
+})();
+document.querySelectorAll('a,button,.use-item,.pc,.hcard,.works-step').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.width='18px';cur.style.height='18px';cur2.style.width='56px';cur2.style.height='56px'});
+  el.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';cur2.style.width='34px';cur2.style.height='34px'});
+});
+
+/* PARTICLES */
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+let W,H,pts=[];
+function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight}
+resize();window.addEventListener('resize',resize);
+class Pt{
+  constructor(){this.reset()}
+  reset(){this.x=Math.random()*W;this.y=Math.random()*H;this.vx=(Math.random()-.5)*.28;this.vy=(Math.random()-.5)*.28;this.r=Math.random()*1.4+.4;this.a=Math.random()*.5+.08}
+  update(){this.x+=this.vx;this.y+=this.vy;if(this.x<0||this.x>W||this.y<0||this.y>H)this.reset()}
+  draw(){ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=`rgba(13,255,212,${this.a})`;ctx.fill()}
+}
+for(let i=0;i<90;i++)pts.push(new Pt());
+function lines(){
+  for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+    const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+    if(d<130){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(13,255,212,${.07*(1-d/130)})`;ctx.lineWidth=.5;ctx.stroke()}
+  }
+}
+(function loop(){ctx.clearRect(0,0,W,H);pts.forEach(p=>{p.update();p.draw()});lines();requestAnimationFrame(loop)})();
+
+/* SCROLL REVEAL */
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+/* CHATBOT KB */
+const KB=[
+  {k:['what is','what are','tell me','describe','overview','about'],a:"Kairo Dynamics is a web-based sales intelligence platform sold as subscription software ($20/month). It helps B2B sales teams identify companies showing meaningful signals, understand likely business needs, and focus outreach on the accounts most likely to convert — right now."},
+  {k:['price','pricing','cost','how much','$20','subscription','pay','plan'],a:"The Pro Access plan is <strong>$20/month</strong>. That gets you full access to the Company State Space Intelligence engine — including pain point vectors, AI sales script generation, unlimited state space search, and custom similarity weights. Secure payment via Stripe."},
+  {k:['how does it work','how it works','process','steps','methodology'],a:"Four steps:<br><br>1️⃣ <strong>Data Analysis</strong> — Analyze public signals like job postings<br>2️⃣ <strong>Synthesis</strong> — Organize into structured company insights<br>3️⃣ <strong>Intelligence</strong> — Surface likely needs and target accounts<br>4️⃣ <strong>Access</strong> — Explore everything on the web platform"},
+  {k:['who is it for','who uses','persona','b2b','sales team','revops','growth'],a:"Three core personas:<br><br>💼 <strong>B2B Sales Teams</strong> — sharper targeting & timing<br>🚀 <strong>Growth Teams</strong> — scaling outbound programs<br>⚙️ <strong>RevOps Teams</strong> — managing data-driven workflows<br><br>If you prioritize outbound, Kairo is built for you."},
+  {k:['get started','start','sign up','create account','access','join','subscribe'],a:"Two ways to start:<br><br>📧 Email <strong>hello@kairoai.systems</strong> to request access<br>📅 Book a demo to see it live first<br><br>Or go directly to <strong>kairodynamics.io/create-account/</strong> to create your Pro account."},
+  {k:['data','job posting','public','source','signal','where does'],a:"Kairo analyzes publicly available business signals — with job postings as a key concrete source. These signals surface company needs, growth patterns, and buying context. We deliver software-generated insights, <em>not</em> raw data dumps or static lists."},
+  {k:['demo','walkthrough','show','book','live'],a:"The demo covers:<br>→ Full web-based workflow tour<br>→ How signals become structured insights<br>→ State Space Intelligence engine live<br>→ How subscription access is set up<br><br>Email <strong>hello@kairoai.systems</strong> to book."},
+  {k:['contact','email','reach','support','help','hello','kairoai'],a:"Reach the team at:<br><br>📧 <strong>hello@kairoai.systems</strong><br>🌐 kairodynamics.io/contact/<br><br>They handle all onboarding, demos, and subscription questions directly."},
+  {k:['feature','include','what do i get','script','similarity','pain point','state space'],a:"Pro includes:<br><br>✅ Unlimited State Space Search<br>✅ Full Pain Point Traceability<br>✅ AI Sales Script Engine<br>✅ Custom Similarity Weights<br><br>All in one web platform — no integrations required to start."},
+  {k:['company','kairoai','systems','llc','who made','operated'],a:"Kairo Dynamics is a product of <strong>KairoAI Systems LLC</strong>. The same team operates the platform, handles demos, and manages all subscriptions. Contact: hello@kairoai.systems"},
+  {k:['privacy','terms','legal','policy'],a:"Privacy Policy and Terms of Service are at:<br>→ kairodynamics.io/privacy/<br>→ kairodynamics.io/terms/"},
+  {k:['outbound','prospect','pipeline','lead','prioritize','timing'],a:"Kairo is purpose-built for outbound. Use it to prioritize accounts, understand needs before the first call, discover lookalike companies, and time outreach based on real signals — not guesswork."}
+];
+function reply(msg){
+  const l=msg.toLowerCase();
+  for(const e of KB)if(e.k.some(k=>l.includes(k)))return e.a;
+  return "Great question! For anything specific, reach the team directly at <strong>hello@kairoai.systems</strong> — they're quick to respond and handle all onboarding questions personally.";
+}
+function addMsg(txt,type){
+  const msgs=document.getElementById('chatMsgs');
+  const d=document.createElement('div');d.className=`msg ${type}`;
+  const b=document.createElement('div');b.className='msg-b';b.innerHTML=txt;
+  d.appendChild(b);msgs.appendChild(d);msgs.scrollTop=9999;
+}
+function showTyping(){
+  const msgs=document.getElementById('chatMsgs');
+  const t=document.createElement('div');t.className='msg bot';t.id='td';
+  t.innerHTML='<div class="msg-b"><div class="tdots"><span></span><span></span><span></span></div></div>';
+  msgs.appendChild(t);msgs.scrollTop=9999;
+}
+function removeTyping(){const t=document.getElementById('td');if(t)t.remove()}
+function send(){
+  const i=document.getElementById('ci');const txt=i.value.trim();if(!txt)return;
+  addMsg(txt,'user');i.value='';i.style.height='auto';
+  showTyping();setTimeout(()=>{removeTyping();addMsg(reply(txt),'bot')},620+Math.random()*380);
+}
+function sq(txt){addMsg(txt,'user');showTyping();setTimeout(()=>{removeTyping();addMsg(reply(txt),'bot')},620+Math.random()*380)}
+function ck(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}}
+function toggleChat(){document.getElementById('chatWin').classList.toggle('open');document.getElementById('cBtn').classList.toggle('open')}
+document.getElementById('ci').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'});
+</script>
+</body>
+</html>
